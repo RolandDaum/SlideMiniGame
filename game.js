@@ -10,10 +10,12 @@ let playerXpos = cvwidth/2;
 let movetoright = true;
 let movetoleft = false;
 
-const fps = 60;
+const fps = 1000;
 const speed = 10
 let startXcube = cvwidth/2
 let Level = 0
+
+let cubesList = []
 
 // Zeichent den Slider
 function drawslider() {
@@ -77,37 +79,73 @@ document.addEventListener('touchstart', function(event) {
 });
 
 
-
-
-
-
-// Würfel drehen
-function summoncube() {
-
-  startXcube = getRandomNumber(cvwidth/100*10,cvwidth/100*90)
-
-  //   y=mx+b
-  //
-  //   if(startXcube < cvwith/2) {
-  //     m = getRandomNumber(-1,-5)    -   1 ist 45° und oben bis slider ist quadrat und da nicht größer als 45, wenn nur kleiner aks größer 1 um steiler
-  //   }
-  //   if (startXcube > cvwith/2) {
-  //     m = getRandomNumber(1,5)
-  //   }
-  //   0=m*startXcube+b | solve b
-  //   0/startXcube = m+b
-  //   0/startXcube-m = b
-  //
-  //   ctx.translate(x,m*x+(0/startXcube-m)) | x mit jedem Frame zunehmen lassen
-
-  ctx.translate(cvwidth/2, cvheight/2); // P(X|Y)
-  ctx.rotate((45 * Math.PI) / 180); // 45° Rotation
-  ctx.fillStyle = '#fdfdfe';
-  ctx.fillRect(-(cvheight/100*5) / 2, -(cvheight/100*5) / 2, (cvheight/100*5), (cvheight/100*5));
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-
+// Zeichnet ein Quadrat an die gegebene Position mit entsprechneder Rotation
+function drawCube(x,y,rotaion) {
+    ctx.translate(x, y); // P(X|Y)
+    ctx.rotate((rotaion * Math.PI) / 180); // 45° Rotation
+    ctx.fillStyle = '#fdfdfe';
+    ctx.fillRect(-(cvheight/100*5) / 2, -(cvheight/100*5) / 2, (cvheight/100*5), (cvheight/100*5));
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
+function addCubetoList() {
+    const newCube = {
+        m: null,
+        b: null,
+        x: 0,
+        rotaion: getRandomNumber(0, 90),
+    };
 
+    // Nimmt einen Steigungs Faktor m für die lineare Funktion
+    newCube.m = getRandomNumber(-5,5)
+    while (newCube.m === 0) {
+        newCube.m = getRandomNumber(-5,5)
+    }
+
+    // Berechnet einen randome Y-Achsenabschnitt (b) für die lineare Funktion
+    if (newCube.m > 1) {
+        newCube.b = getRandomNumber(0,-((newCube.m-1)*cvheight))
+    }
+    if (newCube.m <= -1) {
+        newCube.b = getRandomNumber(cvheight, -cvheight*newCube.m)
+    }
+    if (newCube.m === 1) {
+        newCube.b = 0
+    }
+
+    newCube.x = (-newCube.b/newCube.m)
+
+
+    cubesList.push(newCube);
+}
+function deleteCubefromList(cubeNum) {
+    cubesList.splice(cubeNum,1)
+    console.log('deleted cube ' + cubeNum)
+}
+function calculateCubes() {
+    if (cubesList == '') {
+        addCubetoList()
+    }
+
+    for (i = 0; i < cubesList.length; i++) {
+        drawCube(cubesList[i].x, (cubesList[i].m*cubesList[i].x+cubesList[i].b), cubesList[i].rotaion)
+        if (cubesList[i].m > 0) {
+            cubesList[i].x++
+        }
+        if (cubesList[i].m < 0) {
+            cubesList[i].x--
+        }
+        if ((cubesList[i].m*cubesList[i].x+cubesList[i].b) > cvheight/3*2) {
+            deleteCubefromList(i)
+        }
+    }
+    if (cubesList.length === 5) {
+
+    }
+    else {
+        addCubetoList()
+        console.log('created new cube')
+    }
+}
 
 
 
@@ -123,8 +161,7 @@ function render() {
     drawplayer()
     sliderballposition()
 
-    summoncube()
-
+    calculateCubes()
 }
 setInterval(render, 1000/fps);
 
