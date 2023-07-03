@@ -1,8 +1,9 @@
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-canvas.height=canvas.clientHeight * 4
-canvas.width=canvas.clientWidth * 4
+const resolutionMultiplier = 4
+canvas.height=canvas.clientHeight * resolutionMultiplier
+canvas.width=canvas.clientWidth * resolutionMultiplier
 const cvheight = canvas.height;
 const cvwidth = canvas.width;
 
@@ -14,13 +15,18 @@ const fps = 60;
 const speedPlayer = 15
 const speedCubes = 2.5
 const spawnDelayinSec = 1
-const maxCubes = 5
+const maxCubes = 7.5
+const everyXcubeisApoint = 7.5
+
+let score = 0
 
 let cubesList = []
 
 let timeLastCubecreated = fps*spawnDelayinSec
 
 
+
+                        // --- | Functions for the main Game | --- //
 // Zeichent den Slider
 function drawslider() {
     ctx.beginPath();
@@ -56,7 +62,6 @@ function sliderballposition() {
     }
 
 }
-
 // Guckt, ob 'Space' gedrückt wurde und ändert gegebenenfalls die Richtung
 document.addEventListener('keydown', function(event) {
     if (event.code === 'Space') {
@@ -81,16 +86,20 @@ document.addEventListener('touchstart', function(event) {
         movetoleft = false;
     }
 });
-
-
 // Zeichnet ein Quadrat an die gegebene Position mit entsprechneder Rotation
-function drawCube(x,y,rotaion) {
+function drawCube(x,y,rotaion, color) {
     ctx.translate(x, y); // P(X|Y)
     ctx.rotate((rotaion * Math.PI) / 180); // 45° Rotation
-    ctx.fillStyle = '#fdfdfe';
+    if (color === undefined) {
+        ctx.fillStyle = '#fdfdfe';
+    }
+    else {
+        ctx.fillStyle = color;
+    }
     ctx.fillRect(-(cvheight/100*5) / 2, -(cvheight/100*5) / 2, (cvheight/100*5), (cvheight/100*5));
     ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
+// Fügt einen neuen Cube zur Liste hinzu, wenn einer fehlt
 function addCubetoList() {
 
     if (timeLastCubecreated === fps*spawnDelayinSec) {
@@ -99,6 +108,7 @@ function addCubetoList() {
             b: null,
             x: 0,
             rotaion: getRandomNumber(0, 90),
+            Point: false,
         };
     
         // Generating m for a 2:3 ratio (1:1,5)
@@ -117,39 +127,62 @@ function addCubetoList() {
     
         newCube.x = (-newCube.b/newCube.m)
     
-    
+        if (getRandomNumber(1,everyXcubeisApoint) === 1) {
+            newCube.Point = true
+        }
         cubesList.push(newCube);
-
         timeLastCubecreated = 0
     }
     else {
         timeLastCubecreated++
     }
-
-
-
-
 }
-
+// Löscht einen Cube x von der Liste
 function deleteCubefromList(cubeNum) {
     cubesList.splice(cubeNum,1)
 }
-
+// Berechnet die Position der Cubes
 function calculateCubes() {
     if (cubesList === '') {
         addCubetoList();
     }
-
     for (i = 0; i < cubesList.length; i++) {
-        drawCube(cubesList[i].x, (cubesList[i].m*cubesList[i].x+cubesList[i].b), cubesList[i].rotaion)
-        if (cubesList[i].m > 0) {
-            cubesList[i].x = cubesList[i].x + speedCubes
+        if (
+            (
+                (cubesList[i].m * cubesList[i].x + cubesList[i].b) >= cvheight / 2 - (cvheight / 100 * 5) / 2 &&
+                (cubesList[i].m * cubesList[i].x + cubesList[i].b) <= cvheight / 2 + (cvheight / 100 * 5) / 2
+            )
+            &&
+            (
+                cubesList[i].x + (cvheight / 100 * 5) / 2 >= playerXpos - (cvheight / 100 * 5) / 2 &&
+                cubesList[i].x - (cvheight / 100 * 5) / 2 <= playerXpos + (cvheight / 100 * 5) / 2
+            )
+        ) {
+            if (cubesList[i].Point === true) {
+                score++
+                deleteCubefromList(i);
+            }
+            else if (cubesList[i].Point === false) {
+                score = 0
+                cubesList = []
+            }
         }
-        if (cubesList[i].m < 0) {
-            cubesList[i].x = cubesList[i].x - speedCubes
-        }
-        if ((cubesList[i].m*cubesList[i].x+cubesList[i].b) > cvheight/3*2) {
-            deleteCubefromList(i)
+        else {
+            if (cubesList[i].Point === true) {
+                drawCube(cubesList[i].x, (cubesList[i].m*cubesList[i].x+cubesList[i].b), cubesList[i].rotaion, '#00ffaf')
+            }
+            else if (cubesList[i].Point === false) {
+                drawCube(cubesList[i].x, (cubesList[i].m*cubesList[i].x+cubesList[i].b), cubesList[i].rotaion)
+            }
+            if (cubesList[i].m > 0) {
+                cubesList[i].x = cubesList[i].x + speedCubes
+            }
+            if (cubesList[i].m < 0) {
+                cubesList[i].x = cubesList[i].x - speedCubes
+            }
+            if ((cubesList[i].m*cubesList[i].x+cubesList[i].b) > cvheight/3*2) {
+                deleteCubefromList(i)
+            }
         }
     }
     if (cubesList.length === maxCubes) {
@@ -168,15 +201,26 @@ function render() {
     drawslider()
     drawplayer()
     sliderballposition()
-
     calculateCubes()
+
+    drawText(score, cvwidth/2, cvheight/5*4)
+
 }
 setInterval(render, 1000/fps);
 
 
 
-
-
+function drawText(text, x, y) {
+    var fontSize = cvheight / 5;
+    
+    ctx.font = fontSize + "px 'Roboto'";
+    ctx.fillStyle = "#fdfdfe";
+    
+    var textWidth = ctx.measureText(text).width;
+    var centeredX = x - (textWidth / 2);
+    
+    ctx.fillText(text, centeredX, y);
+}
 function getRandomNumber(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
