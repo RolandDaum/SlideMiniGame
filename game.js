@@ -18,6 +18,12 @@ const spawnDelayinSec = 1
 const maxCubes = 7.5
 const everyXcubeisApoint = 7.5
 
+var sound_changeDirection = new Audio('./Sounds/chnageDirection.mp3')
+var sound_collectedPoint = new Audio('./Sounds/collectedPoint.mp3')
+var sound_gameOver = new Audio('./Sounds/gameOver.mp3')
+var sound_SliderEnd = new Audio('./Sounds/SliderEnd.mp3')
+
+
 let score = 0
 
 let cubesList = []
@@ -49,10 +55,12 @@ function sliderballposition() {
     if (playerXpos > cvwidth/100*90) {
         movetoright = false;
         movetoleft = true;
+        sound_SliderEnd.play()
     }
     if (playerXpos < cvwidth/100*10) {
         movetoright = true;
         movetoleft = false;
+        sound_SliderEnd.play()
     }
     if (movetoright) {
         playerXpos = playerXpos + speedPlayer
@@ -73,6 +81,7 @@ document.addEventListener('keydown', function(event) {
             movetoright = true;
             movetoleft = false;
         }
+        sound_changeDirection.play()
     }
 });
 // Guckt, ob der Screen berührt wurde und ändert gegebenenfalls die Richtung
@@ -85,6 +94,7 @@ document.addEventListener('touchstart', function(event) {
         movetoright = true;
         movetoleft = false;
     }
+    sound_changeDirection.play()
 });
 // Zeichnet ein Quadrat an die gegebene Position mit entsprechneder Rotation
 function drawCube(x,y,rotaion, color) {
@@ -161,10 +171,12 @@ function calculateCubes() {
             if (cubesList[i].Point === true) {
                 score++
                 deleteCubefromList(i);
+                sound_collectedPoint.play()
             }
             else if (cubesList[i].Point === false) {
                 score = 0
                 cubesList = []
+                sound_gameOver.play()
             }
         }
         else {
