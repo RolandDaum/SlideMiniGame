@@ -7,15 +7,19 @@ const cvheight = canvas.height;
 const cvwidth = canvas.width;
 
 let playerXpos = cvwidth/2;
-let movetoright = true;
+let movetoright = false;
 let movetoleft = false;
 
-const fps = 1000;
-const speed = 10
-let startXcube = cvwidth/2
-let Level = 0
+const fps = 60;
+const speedPlayer = 15
+const speedCubes = 2.5
+const spawnDelayinSec = 1
+const maxCubes = 5
 
 let cubesList = []
+
+let timeLastCubecreated = fps*spawnDelayinSec
+
 
 // Zeichent den Slider
 function drawslider() {
@@ -45,10 +49,10 @@ function sliderballposition() {
         movetoleft = false;
     }
     if (movetoright) {
-        playerXpos = playerXpos + speed
+        playerXpos = playerXpos + speedPlayer
     }
     if (movetoleft) {
-        playerXpos = playerXpos - speed
+        playerXpos = playerXpos - speedPlayer
     }
 
 }
@@ -88,69 +92,73 @@ function drawCube(x,y,rotaion) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 function addCubetoList() {
-    const newCube = {
-        m: null,
-        b: null,
-        x: 0,
-        rotaion: getRandomNumber(0, 90),
-    };
 
-    // Nimmt einen Steigungs Faktor m für die lineare Funktion
-    newCube.m = getRandomNumber(-5,5)
-    while (newCube.m === 0) {
+    if (timeLastCubecreated === fps*spawnDelayinSec) {
+        const newCube = {
+            m: null,
+            b: null,
+            x: 0,
+            rotaion: getRandomNumber(0, 90),
+        };
+    
+        // Generating m for a 2:3 ratio (1:1,5)
         newCube.m = getRandomNumber(-5,5)
+        while (newCube.m === 0) {
+            newCube.m = getRandomNumber(-5,5)
+        }
+        if (newCube.m > 0) {
+            newCube.m = newCube.m + 0.5
+            newCube.b = getRandomNumber(0,-(newCube.m - 1.5)*cvwidth)
+        }
+        if (newCube.m < 0) {
+            newCube.m = newCube.m - 0.5
+            newCube.b = getRandomNumber(cvheight/3*2,-newCube.m*cvwidth)
+        }
+    
+        newCube.x = (-newCube.b/newCube.m)
+    
+    
+        cubesList.push(newCube);
+
+        timeLastCubecreated = 0
+    }
+    else {
+        timeLastCubecreated++
     }
 
-    // Berechnet einen randome Y-Achsenabschnitt (b) für die lineare Funktion
-    if (newCube.m > 1) {
-        newCube.b = getRandomNumber(0,-((newCube.m-1)*cvheight))
-    }
-    if (newCube.m <= -1) {
-        newCube.b = getRandomNumber(cvheight, -cvheight*newCube.m)
-    }
-    if (newCube.m === 1) {
-        newCube.b = 0
-    }
-
-    newCube.x = (-newCube.b/newCube.m)
 
 
-    cubesList.push(newCube);
+
 }
+
 function deleteCubefromList(cubeNum) {
     cubesList.splice(cubeNum,1)
-    console.log('deleted cube ' + cubeNum)
 }
+
 function calculateCubes() {
-    if (cubesList == '') {
-        addCubetoList()
+    if (cubesList === '') {
+        addCubetoList();
     }
 
     for (i = 0; i < cubesList.length; i++) {
         drawCube(cubesList[i].x, (cubesList[i].m*cubesList[i].x+cubesList[i].b), cubesList[i].rotaion)
         if (cubesList[i].m > 0) {
-            cubesList[i].x++
+            cubesList[i].x = cubesList[i].x + speedCubes
         }
         if (cubesList[i].m < 0) {
-            cubesList[i].x--
+            cubesList[i].x = cubesList[i].x - speedCubes
         }
         if ((cubesList[i].m*cubesList[i].x+cubesList[i].b) > cvheight/3*2) {
             deleteCubefromList(i)
         }
     }
-    if (cubesList.length === 5) {
+    if (cubesList.length === maxCubes) {
 
     }
     else {
-        addCubetoList()
-        console.log('created new cube')
+        addCubetoList();
     }
 }
-
-
-
-
-
 
 
 // Führt alle Functionen mehrmals die Sekunde aus
@@ -169,24 +177,6 @@ setInterval(render, 1000/fps);
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function getRandomNumber(min, max) {
-    // Math.random() gibt eine Zufallszahl im Bereich [0, 1) zurück
-    // Multipliziere mit (max - min + 1), um den Zahlenbereich abzudecken
-    // Verschiebe um min, um den minimalen Wert zu berücksichtigen
     return Math.floor(Math.random() * (max - min + 1)) + min;
-  }
+}
