@@ -1,0 +1,15 @@
+{
+    "name": "Slide mini Game",
+    "short_name": "SmG",
+    "start_url": ".",
+    "background_color": "#1b2537",
+    "theme_color": "#000000",
+    "display": "standalone",
+    "icons": [
+        {
+            "src": "./assets/icon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
